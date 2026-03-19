@@ -3,20 +3,52 @@ const router = express.Router();
 const { generateStory } = require('../utils/groq');
 const Story = require('../models/Story');
 const protect = require('../middleware/authMiddleware');
+const { validateStory } = require('../utils/safetyCheck');
+// In routes/story.js — generate route
+const { saveLastStory, getLastStory } = require('./../utils/storeMemory');
+
 
 router.post('/generate', protect, async (req, res) => {
-  try {
-    const { childName, animal, mood } = req.body;
-    if (!childName || !animal || !mood)
-      return res.status(400).json({ error: 'All fields are required' });
-    const content = await generateStory(childName, animal, mood);
-    res.json({ content });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Story generation failed' });
-  }
-});
+  const { childName, animal, mood } = req.body;
+  let content, attempts = 0;
 
+  // Retry up to 3 times if story fails safety check
+  do {
+    content = await generateStory(childName, animal, mood);
+    const check = validateStory(content);
+    if (check.safe) break;
+    console.warn(`Safety check failed (attempt ${attempts + 1}): ${check.reason}`);
+    attempts++;
+  } while (attempts < 3);
+
+  res.json({ content });
+});
+router.post('/generate-stream', protect, async (req, res) => {
+  const { childName, animal, mood } = req.body;
+
+  // Set headers for streaming
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+
+  const stream = await groq.chat.completions.create({
+    model: 'llama-3.1-8b-instant',
+    messages: buildMessages(childName, animal, mood),
+    temperature: 0.85,
+    max_tokens: 350,
+    stream: true,  // ← this is the key change
+  });
+
+  for await (const chunk of stream) {
+    const word = chunk.choices[0]?.delta?.content || '';
+    if (word) {
+      res.write(`data: ${JSON.stringify({ word })}\n\n`);
+    }
+  }
+
+  res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+  res.end();
+});
 router.post('/save', protect, async (req, res) => {
   try {
     const { childName, animal, mood, content } = req.body;

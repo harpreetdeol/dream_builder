@@ -12,14 +12,16 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = async (email, password) => {
-    const { data } = await axios.post('http://localhost:5000/api/auth/login', { email, password });
+    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+    const { data } = await axios.post(`${API_URL}/auth/login`, { email, password });
     localStorage.setItem('dreamUser', JSON.stringify(data));
     setUser(data);
     return data;
   };
 
   const register = async (name, email, password) => {
-    const { data } = await axios.post('http://localhost:5000/api/auth/register', { name, email, password });
+    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+    const { data } = await axios.post(`${API_URL}/auth/register`, { name, email, password });
     localStorage.setItem('dreamUser', JSON.stringify(data));
     setUser(data);
     return data;
