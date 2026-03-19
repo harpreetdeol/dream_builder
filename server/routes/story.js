@@ -4,8 +4,7 @@ const { generateStory } = require('../utils/groq');
 const Story = require('../models/Story');
 const protect = require('../middleware/authMiddleware');
 const { validateStory } = require('../utils/safetyCheck');
-// In routes/story.js — generate route
-const { saveLastStory, getLastStory } = require('./../utils/storeMemory');
+
 
 
 router.post('/generate', protect, async (req, res) => {
