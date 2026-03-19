@@ -7,7 +7,7 @@ const app = express();
 
 const allowedOrigins = [
   'http://localhost:3000',
-  'https://dream-builder.vercel.app',  // your vercel URL
+  'https://dream-builder-sigma.vercel.app',  // your vercel URL
   'https://dream-builder-git-main-harpreetdeol.vercel.app', // preview URL
 ];
 
