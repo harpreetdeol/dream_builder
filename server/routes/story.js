@@ -4,7 +4,7 @@ const { generateStory } = require('../utils/groq');
 const Story = require('../models/Story');
 const protect = require('../middleware/authMiddleware');
 const { validateStory } = require('../utils/safetyCheck');
-
+const { generateSpeech } = require('../utils/textToSpeech');
 
 
 router.post('/generate', protect, async (req, res) => {
@@ -89,5 +89,25 @@ router.delete('/:id', protect, async (req, res) => {
     res.status(500).json({ error: 'Failed to delete story' });
   }
 });
+// Generate audio for a story
+router.post('/speak', protect, async (req, res) => {
+  try {
+    const { text } = req.body;
 
+    if (!text) return res.status(400).json({ error: 'Text is required' });
+
+    const audioBuffer = await generateSpeech(text);
+
+    // Send audio back as mp3
+    res.set({
+      'Content-Type': 'audio/mpeg',
+      'Content-Length': audioBuffer.length,
+    });
+
+    res.send(Buffer.from(audioBuffer));
+  } catch (err) {
+    console.error('TTS error:', err.message);
+    res.status(500).json({ error: 'Could not generate speech' });
+  }
+});
 module.exports = router;
