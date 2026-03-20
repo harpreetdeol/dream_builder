@@ -11,6 +11,18 @@ export default function Auth() {
   const { login, register } = useAuth();
   const navigate = useNavigate();
 
+  const switchToLogin = () => {
+    setIsLogin(true);
+    setError('');
+    setForm({ name: '', email: '', password: '' });
+  };
+
+  const switchToRegister = () => {
+    setIsLogin(false);
+    setError('');
+    setForm({ name: '', email: '', password: '' });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -63,30 +75,40 @@ export default function Auth() {
           </p>
         </div>
 
-        {/* Toggle */}
+        {/* Toggle — fixed with explicit functions */}
         <div style={{
           display: 'flex', background: 'rgba(255,255,255,0.06)',
           borderRadius: 50, padding: 4, marginBottom: 32,
           border: '1px solid rgba(255,255,255,0.1)',
         }}>
-         {['Login', 'Register'].map((tab, i) => (
-  <button
-    key={tab}
-    onClick={() => { setIsLogin(i === 0); setError(''); }}
-    style={{
-      flex: 1, padding: '12px', borderRadius: 50, border: 'none',
-      fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 800,
-      cursor: 'pointer',
-      transition: 'all 0.3s',
-      background: (isLogin ? i === 0 : i === 1)
-        ? 'linear-gradient(135deg, var(--violet), var(--pink))'
-        : 'transparent',
-      color: (isLogin ? i === 0 : i === 1) ? 'white' : 'rgba(255,255,255,0.45)',
-    }}
-  >
-    {tab}
-  </button>
-))}
+          <button
+            onClick={switchToLogin}
+            style={{
+              flex: 1, padding: '12px', borderRadius: 50, border: 'none',
+              fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 800,
+              cursor: 'pointer', transition: 'all 0.3s',
+              background: isLogin
+                ? 'linear-gradient(135deg, #6c3fc5, #f472b6)'
+                : 'transparent',
+              color: isLogin ? 'white' : 'rgba(255,255,255,0.45)',
+            }}
+          >
+            🌙 Login
+          </button>
+          <button
+            onClick={switchToRegister}
+            style={{
+              flex: 1, padding: '12px', borderRadius: 50, border: 'none',
+              fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 800,
+              cursor: 'pointer', transition: 'all 0.3s',
+              background: !isLogin
+                ? 'linear-gradient(135deg, #6c3fc5, #f472b6)'
+                : 'transparent',
+              color: !isLogin ? 'white' : 'rgba(255,255,255,0.45)',
+            }}
+          >
+            ⭐ Register
+          </button>
         </div>
 
         {/* Form */}
@@ -172,13 +194,15 @@ export default function Auth() {
           </motion.button>
         </form>
 
+        {/* Bottom toggle link */}
         <p style={{ textAlign: 'center', marginTop: 24, color: 'rgba(255,255,255,0.4)', fontSize: 14, fontWeight: 600 }}>
           {isLogin ? "Don't have an account? " : 'Already have an account? '}
           <button
-            onClick={() => { setIsLogin(!isLogin); setError(''); }}
+            onClick={isLogin ? switchToRegister : switchToLogin}
             style={{
               background: 'none', border: 'none', color: 'var(--lavender)',
-              cursor: 'pointer', fontWeight: 800, fontSize: 14, fontFamily: 'var(--font-body)',
+              cursor: 'pointer', fontWeight: 800, fontSize: 14,
+              fontFamily: 'var(--font-body)',
             }}
           >
             {isLogin ? 'Register here ✨' : 'Login here 🌙'}

@@ -16,3 +16,5 @@ export const saveStory     = (data)  => API.post('/story/save', data);
 export const getStories    = ()      => API.get('/story/list');
 export const toggleFav     = (id)    => API.patch(`/story/${id}/favourite`);
 export const deleteStory   = (id)    => API.delete(`/story/${id}`);
+export const speakStory = (text) =>
+  API.post('/story/speak', { text }, { responseType: 'blob' }); // blob = audio file

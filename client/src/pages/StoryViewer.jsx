@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { saveStory } from '../api/storyApi';
+import { saveStory ,speakStory} from '../api/storyApi';
 
 const ANIMAL_EMOJIS = {
   bunny: '🐰', elephant: '🐘', lion: '🦁', dolphin: '🐬',
@@ -27,7 +27,9 @@ export default function StoryViewer() {
   const [audioUnlocked, setAudioUnlocked] = useState(false);
   const utteranceRef = useRef(null);
   const keepAliveRef = useRef(null);
-
+const [audioUrl, setAudioUrl] = useState(null);
+const [audioLoading, setAudioLoading] = useState(false);
+const audioRef = useRef(null);
   const story = state?.story || '';
   const form  = state?.form  || {};
   const animalEmoji = getAnimalEmoji(form.animal);
@@ -63,33 +65,58 @@ useEffect(() => {
     if (keepAliveRef.current) clearInterval(keepAliveRef.current);
   };
 }, []);
-const readAloud = () => {
-  if (speaking) {
-    window.responsiveVoice.cancel();
+
+
+
+const readAloud = async () => {
+  // If already playing — stop it
+  if (speaking && audioRef.current) {
+    audioRef.current.pause();
+    audioRef.current.currentTime = 0;
     setSpeaking(false);
     return;
   }
 
-  if (!window.responsiveVoice) {
-    alert('Voice engine not loaded yet. Please wait a moment and try again.');
+  // If audio already generated — just play it again
+  if (audioUrl) {
+    audioRef.current.play();
+    setSpeaking(true);
     return;
   }
 
-  window.responsiveVoice.speak(
-    story,
-    'UK English Female',   // works great for bedtime stories
-    {
-      pitch:  1.1,
-      rate:   0.85,
-      volume: 1,
-      onstart:  () => setSpeaking(true),
-      onend:    () => setSpeaking(false),
-      onerror:  () => setSpeaking(false),
-    }
-  );
+  // Generate AI voice for the first time
+  setAudioLoading(true);
+  try {
+    const { data } = await speakStory(story);
 
-  setSpeaking(true);
+    // Convert blob to playable URL
+    const url = URL.createObjectURL(
+      new Blob([data], { type: 'audio/mpeg' })
+    );
+    setAudioUrl(url);
+
+    // Play immediately
+    setTimeout(() => {
+      if (audioRef.current) {
+        audioRef.current.play();
+        setSpeaking(true);
+      }
+    }, 100);
+
+  } catch (err) {
+    console.error('Speech error:', err);
+    alert('Could not generate voice. Try again!');
+  } finally {
+    setAudioLoading(false);
+  }
 };
+
+// Cleanup audio URL on unmount
+useEffect(() => {
+  return () => {
+    if (audioUrl) URL.revokeObjectURL(audioUrl);
+  };
+}, [audioUrl]);
 
   const handleSave = async () => {
     setSaveLoading(true);
@@ -263,27 +290,49 @@ const readAloud = () => {
           transition={{ delay: 0.8 }}
           style={{ display: 'flex', gap: 12, flexWrap: 'wrap', position: 'relative', zIndex: 1 }}
         >
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={readAloud}
-            style={{
-              flex: 1, minWidth: 140, padding: '18px',
-              borderRadius: 50, border: 'none', cursor: 'pointer',
-              fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 17,
-              background: speaking
-                ? 'linear-gradient(135deg, #ef4444, #dc2626)'
-                : 'linear-gradient(135deg, #34d399, #059669)',
-              color: 'white',
-              boxShadow: speaking
-                ? '0 8px 25px rgba(239,68,68,0.4)'
-                : '0 8px 25px rgba(52,211,153,0.4)',
-              transition: 'all 0.3s',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            }}
-          >
-            {speaking ? '⏹ Stop Reading' : '🔊 Read Aloud'}
-          </motion.button>
+         {/* Hidden audio player */}
+{audioUrl && (
+  <audio
+    ref={audioRef}
+    src={audioUrl}
+    onEnded={() => setSpeaking(false)}
+    onError={() => { setSpeaking(false); setAudioLoading(false); }}
+  />
+)}
+
+{/* Read Aloud Button — replace existing one */}
+<motion.button
+  whileHover={{ scale: 1.03 }}
+  whileTap={{ scale: 0.97 }}
+  onClick={readAloud}
+  disabled={audioLoading}
+  style={{
+    flex: 1, minWidth: 140, padding: '18px',
+    borderRadius: 50, border: 'none', cursor: audioLoading ? 'wait' : 'pointer',
+    fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 17,
+    background: speaking
+      ? 'linear-gradient(135deg, #ef4444, #dc2626)'
+      : audioLoading
+      ? 'linear-gradient(135deg, #6c3fc5, #4c1d95)'
+      : 'linear-gradient(135deg, #34d399, #059669)',
+    color: 'white',
+    boxShadow: speaking
+      ? '0 8px 25px rgba(239,68,68,0.4)'
+      : '0 8px 25px rgba(52,211,153,0.4)',
+    transition: 'all 0.3s',
+    display: 'flex', alignItems: 'center',
+    justifyContent: 'center', gap: 8,
+  }}
+>
+  {audioLoading
+    ? '🎵 Creating voice...'
+    : speaking
+    ? '⏹ Stop'
+    : audioUrl
+    ? '🎵 Play Again'
+    : '🎙️ Read Aloud'
+  }
+</motion.button>
 
           <motion.button
             whileHover={{ scale: 1.03 }}
