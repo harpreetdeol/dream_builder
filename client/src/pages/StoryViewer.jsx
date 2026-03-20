@@ -69,7 +69,6 @@ useEffect(() => {
 
 
 const readAloud = async () => {
-  // If already playing — stop it
   if (speaking && audioRef.current) {
     audioRef.current.pause();
     audioRef.current.currentTime = 0;
@@ -77,25 +76,21 @@ const readAloud = async () => {
     return;
   }
 
-  // If audio already generated — just play it again
   if (audioUrl) {
     audioRef.current.play();
     setSpeaking(true);
     return;
   }
 
-  // Generate AI voice for the first time
   setAudioLoading(true);
   try {
     const { data } = await speakStory(story);
 
-    // Convert blob to playable URL
     const url = URL.createObjectURL(
-      new Blob([data], { type: 'audio/mpeg' })
+      new Blob([data], { type: 'audio/mpeg' }) // ✅ changed flac → mpeg
     );
     setAudioUrl(url);
 
-    // Play immediately
     setTimeout(() => {
       if (audioRef.current) {
         audioRef.current.play();

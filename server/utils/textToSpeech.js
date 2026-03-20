@@ -1,32 +1,16 @@
-const axios = require('axios');
+const gtts = require('gtts');
 
-// Rachel voice — warm, soft, perfect for bedtime stories
-const VOICE_ID = '21m00Tcm4TlvDq8ikWAM';
+const generateSpeech = (text) => {
+  return new Promise((resolve, reject) => {
+    const speech = new gtts(text, 'en');
+    const chunks = [];
 
-const generateSpeech = async (text) => {
-  const response = await axios.post(
-    `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`,
-    {
-      text,
-      model_id: 'eleven_multilingual_v2',
-      voice_settings: {
-        stability: 0.85,        // very stable, calm voice
-        similarity_boost: 0.75, // warm and natural
-        style: 0.35,            // gentle storytelling style
-        use_speaker_boost: true,
-      }
-    },
-    {
-      headers: {
-        'xi-api-key': process.env.ELEVENLABS_API_KEY,
-        'Content-Type': 'application/json',
+    const stream = speech.stream();
 
-      },
-      responseType: 'arraybuffer', // returns audio binary
-    }
-  );
-
-  return response.data; // audio buffer
+    stream.on('data', (chunk) => chunks.push(chunk));
+    stream.on('end', () => resolve(Buffer.concat(chunks)));
+    stream.on('error', (err) => reject(new Error(err.message || 'TTS failed')));
+  });
 };
 
 module.exports = { generateSpeech };

@@ -90,24 +90,20 @@ router.delete('/:id', protect, async (req, res) => {
   }
 });
 // Generate audio for a story
-router.post('/speak', protect, async (req, res) => {
+router.post('/speak', async (req, res) => {
   try {
     const { text } = req.body;
-
     if (!text) return res.status(400).json({ error: 'Text is required' });
 
     const audioBuffer = await generateSpeech(text);
 
-    // Send audio back as mp3
-    res.set({
-      'Content-Type': 'audio/mpeg',
-      'Content-Length': audioBuffer.length,
-    });
+    // ✅ Send buffer as MP3 in API response
+    res.set('Content-Type', 'audio/mpeg');
+    res.set('Content-Length', audioBuffer.length);
+    res.send(audioBuffer);
 
-    res.send(Buffer.from(audioBuffer));
   } catch (err) {
-    console.error('TTS error:', err.message);
-    res.status(500).json({ error: 'Could not generate speech' });
+    res.status(500).json({ error: err.message });
   }
 });
 module.exports = router;
