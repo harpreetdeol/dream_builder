@@ -3,21 +3,21 @@ import axios from 'axios';
 
 const AuthContext = createContext(null);
 
-export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
+// ✅ Read localStorage IMMEDIATELY — not in useEffect
+const getStoredUser = () => {
+  try {
     const stored = localStorage.getItem('dreamUser');
-    if (stored) {
-      try {
-        setUser(JSON.parse(stored));
-      } catch {
-        localStorage.removeItem('dreamUser');
-      }
-    }
-    setLoading(false);
-  }, []);
+    return stored ? JSON.parse(stored) : null;
+  } catch {
+    localStorage.removeItem('dreamUser');
+    return null;
+  }
+};
+
+export function AuthProvider({ children }) {
+  // ✅ User is set instantly — no waiting for useEffect
+  const [user, setUser] = useState(getStoredUser);
+  const [loading, setLoading] = useState(false); // no longer needs to be true
 
   const login = async (email, password) => {
     const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
