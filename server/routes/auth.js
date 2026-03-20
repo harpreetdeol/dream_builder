@@ -8,16 +8,16 @@ const generateToken = (id) =>
 
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, language } = req.body;
     if (!name || !email || !password)
       return res.status(400).json({ error: 'All fields required' });
 
     const exists = await User.findOne({ email });
     if (exists) return res.status(400).json({ error: 'Email already registered' });
 
-    const user = await User.create({ name, email, password });
+    const user = await User.create({ name, email, password, language });
     res.status(201).json({
-      _id: user._id, name: user.name, email: user.email,
+      _id: user._id, name: user.name, email: user.email, language: user.language,
       token: generateToken(user._id)
     });
   } catch (err) {

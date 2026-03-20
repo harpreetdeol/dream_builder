@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { generateStory } from '../api/storyApi';
-
+import { AuthProvider, useAuth } from '../context/AuthContext';
 const moods = [
   { label: 'Happy',   emoji: '😊', color: '#fbbf24' },
   { label: 'Sleepy',  emoji: '😴', color: '#a78bfa' },
@@ -22,7 +22,7 @@ export default function StoryForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
-
+  const { user } = useAuth();
   const canNext = () => {
     if (step === 0) return form.childName.trim().length > 0;
     if (step === 1) return form.animal.trim().length > 0;
@@ -32,17 +32,25 @@ export default function StoryForm() {
 
   const handleNext = () => { if (canNext() && step < 2) setStep(s => s + 1); };
 
-  const handleGenerate = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const { data } = await generateStory(form);
-      navigate('/story', { state: { story: data.content, form } });
-    } catch (err) {
-      setError('Could not create your story. Please try again! 🌙');
-      setLoading(false);
-    }
-  };
+
+ const handleGenerate = async () => {
+  setLoading(true);
+  setError('');
+  
+  console.log('user:', user);           // 👈 check if user exists
+  console.log('user.language:', user?.language); // 👈 check language value
+  
+  try {
+    const language = user?.language || 'en';
+    const { data } = await generateStory({ ...form, language });
+    navigate('/story', { state: { story: data.content, form, language } });
+  } catch (err) {
+    console.log('Full error:', err);         // 👈 see full error
+    console.log('Response:', err.response?.data); // 👈 see backend error
+    setError('Could not create your story. Please try again! 🌙');
+    setLoading(false);
+  }
+};
 
   return (
     <div style={{

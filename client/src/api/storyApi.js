@@ -11,13 +11,13 @@ API.interceptors.request.use(req => {
   return req;
 });
 
-export const generateStory = (data)  => API.post('/story/generate', data);
-export const saveStory     = (data)  => API.post('/story/save', data);
-export const getStories    = ()      => API.get('/story/list');
-export const toggleFav     = (id)    => API.patch(`/story/${id}/favourite`);
-export const deleteStory   = (id)    => API.delete(`/story/${id}`);
-export const speakStory = (text) =>
-  API.post('/story/speak', { text }, { 
-    responseType: 'blob',
-    timeout: 40000 // 40s timeout for model loading
+export const generateStory = (data) => API.post('/story/generate', data);
+export const saveStory = (data) => API.post('/story/save', data);
+export const getStories = () => API.get('/story/list');
+export const toggleFav = (id) => API.patch(`/story/${id}/favourite`);
+export const deleteStory = (id) => API.delete(`/story/${id}`);
+export const speakStory = (text, language = 'en') =>
+  API.post('/story/speak', { text, language }, {
+    responseType: 'arraybuffer', // ✅ must be arraybuffer for Blob to work
+    timeout: 60000,
   });

@@ -8,12 +8,11 @@ const { generateSpeech } = require('../utils/textToSpeech');
 
 
 router.post('/generate', protect, async (req, res) => {
-  const { childName, animal, mood } = req.body;
+  const { childName, animal, mood, language = 'en' } = req.body; // ✅ get language
   let content, attempts = 0;
 
-  // Retry up to 3 times if story fails safety check
   do {
-    content = await generateStory(childName, animal, mood);
+    content = await generateStory(childName, animal, mood, language); // ✅ pass language
     const check = validateStory(content);
     if (check.safe) break;
     console.warn(`Safety check failed (attempt ${attempts + 1}): ${check.reason}`);
@@ -23,7 +22,7 @@ router.post('/generate', protect, async (req, res) => {
   res.json({ content });
 });
 router.post('/generate-stream', protect, async (req, res) => {
-  const { childName, animal, mood } = req.body;
+  const { childName, animal, mood, language = 'en' } = req.body; // ✅ get language
 
   // Set headers for streaming
   res.setHeader('Content-Type', 'text/event-stream');
@@ -89,19 +88,15 @@ router.delete('/:id', protect, async (req, res) => {
     res.status(500).json({ error: 'Failed to delete story' });
   }
 });
-// Generate audio for a story
 router.post('/speak', async (req, res) => {
   try {
-    const { text } = req.body;
+    const { text, language = 'en' } = req.body;
     if (!text) return res.status(400).json({ error: 'Text is required' });
 
-    const audioBuffer = await generateSpeech(text);
+    const audioBuffer = await generateSpeech(text, language);
 
-    // ✅ Send buffer as MP3 in API response
-    res.set('Content-Type', 'audio/mpeg');
-    res.set('Content-Length', audioBuffer.length);
+    res.set('Content-Type', 'audio/wav');
     res.send(audioBuffer);
-
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

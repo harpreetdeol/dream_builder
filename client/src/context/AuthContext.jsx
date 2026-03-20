@@ -27,10 +27,10 @@ export function AuthProvider({ children }) {
     return data;
   };
 
-  const register = async (name, email, password) => {
+  const register = async (name, email, password, language) => {
     const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-    const { data } = await axios.post(`${API_URL}/auth/register`, { name, email, password });
-    localStorage.setItem('dreamUser', JSON.stringify(data));
+  const { data } = await axios.post(`${API_URL}/auth/register`, { name, email, password, language });
+     localStorage.setItem('dreamUser', JSON.stringify(data));
     setUser(data);
     return data;
   };

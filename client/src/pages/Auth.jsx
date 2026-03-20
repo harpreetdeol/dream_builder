@@ -3,9 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 
+const LANGUAGES = [
+  { code: 'en', label: 'English', flag: '🇺🇸' },
+  { code: 'hi', label: 'हिंदी', flag: '🇮🇳' },
+  { code: 'pa', label: 'ਪੰਜਾਬੀ', flag: '🌟' },
+];
+
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
-  const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', language: 'en' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const { login, register } = useAuth();
@@ -14,13 +20,13 @@ export default function Auth() {
   const switchToLogin = () => {
     setIsLogin(true);
     setError('');
-    setForm({ name: '', email: '', password: '' });
+    setForm({ name: '', email: '', password: '', language: 'en' });
   };
 
   const switchToRegister = () => {
     setIsLogin(false);
     setError('');
-    setForm({ name: '', email: '', password: '' });
+    setForm({ name: '', email: '', password: '', language: 'en' });
   };
 
   const handleSubmit = async (e) => {
@@ -31,21 +37,25 @@ export default function Auth() {
       if (isLogin) {
         await login(form.email, form.password);
       } else {
-        await register(form.name, form.email, form.password);
+        await register(form.name, form.email, form.password, form.language); // ✅ pass language
       }
       navigate('/create');
     } catch (err) {
+      console.error(err); 
       setError(err.response?.data?.error || 'Something went wrong. Try again!');
     } finally {
       setLoading(false);
     }
   };
 
+  const inputLabel = (text) => (
+    <label style={{ display: 'block', marginBottom: 8, fontWeight: 700, color: 'var(--lavender)', fontSize: 14 }}>
+      {text}
+    </label>
+  );
+
   return (
-    <div style={{
-      minHeight: '100vh', display: 'flex', alignItems: 'center',
-      justifyContent: 'center', padding: '100px 24px 40px',
-    }}>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '100px 24px 40px' }}>
       <motion.div
         initial={{ opacity: 0, y: 40, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -75,40 +85,21 @@ export default function Auth() {
           </p>
         </div>
 
-        {/* Toggle — fixed with explicit functions */}
+        {/* Toggle */}
         <div style={{
           display: 'flex', background: 'rgba(255,255,255,0.06)',
           borderRadius: 50, padding: 4, marginBottom: 32,
           border: '1px solid rgba(255,255,255,0.1)',
         }}>
-          <button
-            onClick={switchToLogin}
-            style={{
+          {[{ key: true, label: '🌙 Login' }, { key: false, label: '⭐ Register' }].map(({ key, label }) => (
+            <button key={label} onClick={key ? switchToLogin : switchToRegister} style={{
               flex: 1, padding: '12px', borderRadius: 50, border: 'none',
               fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 800,
               cursor: 'pointer', transition: 'all 0.3s',
-              background: isLogin
-                ? 'linear-gradient(135deg, #6c3fc5, #f472b6)'
-                : 'transparent',
-              color: isLogin ? 'white' : 'rgba(255,255,255,0.45)',
-            }}
-          >
-            🌙 Login
-          </button>
-          <button
-            onClick={switchToRegister}
-            style={{
-              flex: 1, padding: '12px', borderRadius: 50, border: 'none',
-              fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 800,
-              cursor: 'pointer', transition: 'all 0.3s',
-              background: !isLogin
-                ? 'linear-gradient(135deg, #6c3fc5, #f472b6)'
-                : 'transparent',
-              color: !isLogin ? 'white' : 'rgba(255,255,255,0.45)',
-            }}
-          >
-            ⭐ Register
-          </button>
+              background: isLogin === key ? 'linear-gradient(135deg, #6c3fc5, #f472b6)' : 'transparent',
+              color: isLogin === key ? 'white' : 'rgba(255,255,255,0.45)',
+            }}>{label}</button>
+          ))}
         </div>
 
         {/* Form */}
@@ -119,92 +110,86 @@ export default function Auth() {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                style={{ overflow: 'hidden' }}
+                style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: 16 }}
               >
-                <label style={{ display: 'block', marginBottom: 8, fontWeight: 700, color: 'var(--lavender)', fontSize: 14 }}>
-                  Your Name 👋
-                </label>
-                <input
-                  className="dream-input"
-                  placeholder="e.g. Sarah"
-                  value={form.name}
-                  onChange={e => setForm({ ...form, name: e.target.value })}
-                  required={!isLogin}
-                />
+                {/* Name */}
+                <div>
+                  {inputLabel('Your Name 👋')}
+                  <input className="dream-input" placeholder="e.g. Sarah"
+                    value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
+                    required={!isLogin} />
+                </div>
+
+                {/* ✅ Language Selector */}
+                <div>
+                  {inputLabel('Story Language 🌍')}
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {LANGUAGES.map(lang => (
+                      <button
+                        key={lang.code}
+                        type="button"
+                        onClick={() => setForm({ ...form, language: lang.code })}
+                        style={{
+                          flex: 1, padding: '12px 8px', borderRadius: 12,
+                          fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 700,
+                          cursor: 'pointer', transition: 'all 0.3s',
+                          background: form.language === lang.code
+                            ? 'linear-gradient(135deg, #6c3fc5, #f472b6)'
+                            : 'rgba(255,255,255,0.06)',
+                          color: form.language === lang.code ? 'white' : 'rgba(255,255,255,0.5)',
+                          border: form.language === lang.code
+                            ? '1px solid transparent'
+                            : '1px solid rgba(255,255,255,0.1)',
+                        }}
+                      >
+                        {lang.flag} {lang.label}
+                      </button>
+                    ))}
+                  </div>
+                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', marginTop: 6, fontWeight: 600 }}>
+                    Stories will be generated in this language by default
+                  </p>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
 
           <div>
-            <label style={{ display: 'block', marginBottom: 8, fontWeight: 700, color: 'var(--lavender)', fontSize: 14 }}>
-              Email Address 📧
-            </label>
-            <input
-              className="dream-input"
-              type="email"
-              placeholder="your@email.com"
-              value={form.email}
-              onChange={e => setForm({ ...form, email: e.target.value })}
-              required
-            />
+            {inputLabel('Email Address 📧')}
+            <input className="dream-input" type="email" placeholder="your@email.com"
+              value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required />
           </div>
 
           <div>
-            <label style={{ display: 'block', marginBottom: 8, fontWeight: 700, color: 'var(--lavender)', fontSize: 14 }}>
-              Password 🔒
-            </label>
-            <input
-              className="dream-input"
-              type="password"
-              placeholder="••••••••"
-              value={form.password}
-              onChange={e => setForm({ ...form, password: e.target.value })}
-              required
-            />
+            {inputLabel('Password 🔒')}
+            <input className="dream-input" type="password" placeholder="••••••••"
+              value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} required />
           </div>
 
           {error && (
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              style={{
-                background: 'rgba(244,63,94,0.15)',
-                border: '1px solid rgba(244,63,94,0.3)',
-                borderRadius: 12, padding: '12px 16px',
-                color: '#fb7185', fontWeight: 700, fontSize: 14,
-                display: 'flex', alignItems: 'center', gap: 8,
-              }}
-            >
-              ⚠️ {error}
-            </motion.div>
+            <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} style={{
+              background: 'rgba(244,63,94,0.15)', border: '1px solid rgba(244,63,94,0.3)',
+              borderRadius: 12, padding: '12px 16px', color: '#fb7185',
+              fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8,
+            }}>⚠️ {error}</motion.div>
           )}
 
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            whileHover={{ scale: 1.02 }}
-            type="submit"
-            disabled={loading}
-            className="btn-primary"
+          <motion.button whileTap={{ scale: 0.97 }} whileHover={{ scale: 1.02 }}
+            type="submit" disabled={loading} className="btn-primary"
             style={{ width: '100%', justifyContent: 'center', marginTop: 8, fontSize: 18, padding: '18px' }}
           >
             {loading
               ? <><span style={{ animation: 'spin-slow 1s linear infinite', display: 'inline-block' }}>✨</span> Please wait...</>
-              : isLogin ? '🌙 Sign In' : '⭐ Create Account'
-            }
+              : isLogin ? '🌙 Sign In' : '⭐ Create Account'}
           </motion.button>
         </form>
 
-        {/* Bottom toggle link */}
         <p style={{ textAlign: 'center', marginTop: 24, color: 'rgba(255,255,255,0.4)', fontSize: 14, fontWeight: 600 }}>
           {isLogin ? "Don't have an account? " : 'Already have an account? '}
-          <button
-            onClick={isLogin ? switchToRegister : switchToLogin}
-            style={{
-              background: 'none', border: 'none', color: 'var(--lavender)',
-              cursor: 'pointer', fontWeight: 800, fontSize: 14,
-              fontFamily: 'var(--font-body)',
-            }}
-          >
+          <button onClick={isLogin ? switchToRegister : switchToLogin} style={{
+            background: 'none', border: 'none', color: 'var(--lavender)',
+            cursor: 'pointer', fontWeight: 800, fontSize: 14, fontFamily: 'var(--font-body)',
+          }}>
             {isLogin ? 'Register here ✨' : 'Login here 🌙'}
           </button>
         </p>
