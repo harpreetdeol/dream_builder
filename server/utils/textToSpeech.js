@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 // Rachel voice — warm, soft, perfect for bedtime stories
-const VOICE_ID = 'JBFqnCBsd6RMkjVDRZzb';
+const VOICE_ID = 'MF3mGyEYCl7XYWbV9V6O';
 
 const generateSpeech = async (text) => {
   const response = await axios.post(
